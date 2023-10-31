@@ -10,12 +10,11 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import org.apache.cxf.binding.soap.interceptor.AbstractSoapInterceptor;
 import org.apache.cxf.interceptor.Fault;
 import org.apache.cxf.phase.Phase;
-import sk.antons.jaul.binary.Bytes;
-import sk.antons.jaul.util.AsRuntimeEx;
-import sk.antons.jaul.xml.XmlFormat;
+import sk.antons.sbutils.util.XmlStreamToString;
 /**
  *
  * @author antons
@@ -24,8 +23,8 @@ public class CxfLogInterceptor extends AbstractSoapInterceptor {
     private static final String LOG_SETUP = CxfLogInterceptor.class.getName() + ".log-setup";
     private Consumer<String> logger = null;
     private BooleanSupplier loggerEnabled = null;
+    private Function<InputStream, String> format;
     private boolean out = false;
-    private boolean forceOneLine = false;
 
     public CxfLogInterceptor(boolean out) {
         super(out?Phase.MARSHAL:Phase.RECEIVE);
@@ -40,8 +39,11 @@ public class CxfLogInterceptor extends AbstractSoapInterceptor {
 
     public CxfLogInterceptor logger(Consumer<String> value) { this.logger = value; return this; }
     public CxfLogInterceptor loggerEnabled(BooleanSupplier value) { this.loggerEnabled = value; return this; }
-    public CxfLogInterceptor forceOneLine(boolean value) { this.forceOneLine = value; return this; }
+    public CxfLogInterceptor format(Function<InputStream, String> value) { this.format = value; return this; }
 
+    public static class Format {
+        public static XmlStreamToString xml() { return XmlStreamToString.instance(); }
+    }
 
     private static int counter = 0;
     private static ThreadLocal<Integer> counterCache = new ThreadLocal<Integer>();
@@ -76,7 +78,7 @@ public class CxfLogInterceptor extends AbstractSoapInterceptor {
                 if(out) {
                     OutputStream os = message.getContent(OutputStream.class);
                     if(os != null)  {
-                        SnifferOutputStream stream = SnifferOutputStream.instance(os, counterNext(), forceOneLine, logger, loggerEnabled);
+                        SnifferOutputStream stream = SnifferOutputStream.instance(os, counterNext(), format, logger, loggerEnabled);
                         registerOutStream(stream);
                         message.setContent(OutputStream.class, stream);
                     } else {
@@ -84,13 +86,13 @@ public class CxfLogInterceptor extends AbstractSoapInterceptor {
                     }
                 } else {
                     printOutStream();
-                    ByteArrayOutputStream bout = new ByteArrayOutputStream();
                     InputStream is = message.getContent(InputStream.class);
                     if(is != null)  {
-                        Bytes.transfer(is, bout);
+                        ByteArrayOutputStream bout = new ByteArrayOutputStream();
+                        is.transferTo(bout);
                         String xml = bout.toString();
                         message.setContent(InputStream.class, new ByteArrayInputStream(bout.toByteArray()));
-                        if(forceOneLine) xml = XmlFormat.instance(xml, 0).forceoneline().format();
+                        if(format != null) xml = format.apply(new ByteArrayInputStream(bout.toByteArray()));
                         if((loggerEnabled != null) && loggerEnabled.getAsBoolean() && (logger != null)) logger.accept(" soap-in["+counter()+"]: "+ xml);
                     } else {
                         if((loggerEnabled != null) && loggerEnabled.getAsBoolean() && (logger != null)) logger.accept(" soap-in["+counter()+"]: no data to log");
@@ -98,7 +100,7 @@ public class CxfLogInterceptor extends AbstractSoapInterceptor {
                 }
             }
         } catch (Exception e) {
-            throw AsRuntimeEx.state(e);
+            throw new IllegalArgumentException(e);
         }
     }
 
@@ -106,23 +108,23 @@ public class CxfLogInterceptor extends AbstractSoapInterceptor {
     private static class SnifferOutputStream extends OutputStream {
         OutputStream os;
         int counter;
-        boolean forceOneLine;
+        Function<InputStream, String> format;
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         Consumer<String> logger = null;
         BooleanSupplier loggerEnabled = null;
 
-        public SnifferOutputStream(OutputStream os, int counter, boolean forceOneLine
+        public SnifferOutputStream(OutputStream os, int counter, Function<InputStream, String> format
             , Consumer<String> logger
             , BooleanSupplier loggerEnabled
         ) {
             this.os = os;
             this.counter = counter;
-            this.forceOneLine = forceOneLine;
+            this.format = format;
             this.logger = logger;
             this.loggerEnabled = loggerEnabled;
         }
 
-        public static SnifferOutputStream instance(OutputStream os, int counter, boolean format, Consumer<String> logger, BooleanSupplier loggerEnabled) { return new SnifferOutputStream(os, counter, format, logger, loggerEnabled); }
+        public static SnifferOutputStream instance(OutputStream os, int counter, Function<InputStream, String> format, Consumer<String> logger, BooleanSupplier loggerEnabled) { return new SnifferOutputStream(os, counter, format, logger, loggerEnabled); }
 
         @Override
         public void close() throws IOException {
@@ -163,7 +165,7 @@ public class CxfLogInterceptor extends AbstractSoapInterceptor {
                 if(notprinted) {
                     notprinted = false;
                     String xml = baos.toString();
-                    if(forceOneLine) xml = XmlFormat.instance(xml, 0).forceoneline().format();
+                    if(format != null) xml = format.apply(new ByteArrayInputStream(baos.toByteArray()));
                     logger.accept("soap-out["+counter+"]: "+ xml);
                 }
             }

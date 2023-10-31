@@ -3,6 +3,7 @@
  */
 package sk.antons.sbutils.rest;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
@@ -74,7 +75,7 @@ public class RestTemplateClient {
         public <T> T call(ParameterizedTypeReference<T> type) { return call(null, type); }
         private <T> T call(Class<T> clazz, ParameterizedTypeReference<T> type) {
             int id = counter++;
-            if(log.isDebugEnabled()) log.debug("http-req[{}] {} {}", id, method.name(), url());
+            if(log.isDebugEnabled()) log.debug("req[{}] {} {}", id, method.name(), url());
             long starttime = System.currentTimeMillis();
             long requesttime = 0;
             try {
@@ -99,14 +100,14 @@ public class RestTemplateClient {
                 }
                 requesttime = System.currentTimeMillis()- starttime;
 
-                if(log.isDebugEnabled()) log.debug("http-res[{}] {} {} status: {}, time: {}", id, method.name(), url(), response.getStatusCodeValue(), requesttime);
+                if(log.isDebugEnabled()) log.debug("res[{}] {} {} status: {}, time: {}", id, method.name(), url(), response.getStatusCodeValue(), requesttime);
                 if(RestTemplateClient.this.responseValidator().test(response)) {
-                    throw new HttpException(response).method(method).url(url());
-                } else {
                     return response.getBody();
+                } else {
+                    throw new HttpException(response).method(method).url(url());
                 }
             } catch (Throwable e) {
-                if(log.isDebugEnabled()) log.debug("http-res[{}] {} {} err: {}", id, method.name(), url(), e.toString());
+                if(log.isDebugEnabled()) log.debug("res[{}] {} {} err: {}", id, method.name(), url(), e.toString());
                 if(e instanceof HttpException) throw (HttpException)e;
                 else throw new HttpException(e).url(url()).method(method);
             }
@@ -114,8 +115,8 @@ public class RestTemplateClient {
         }
 
         private String url() {
-            return RestTemplateClient.this.root == null ? "" : RestTemplateClient.this.root
-                    + path == null ? "" : path;
+            return (RestTemplateClient.this.root == null ? "" : RestTemplateClient.this.root)
+                    + (path == null ? "" : path);
         }
     }
 
@@ -210,6 +211,7 @@ public class RestTemplateClient {
         public HttpException url(String value) { this.url = value; return this; }
         public HttpException method(HttpMethod value) { this.method = value; return this; }
 
+        @JsonIgnore
         public HttpHeaders getHeaders() {
             return headers;
         }
@@ -218,6 +220,7 @@ public class RestTemplateClient {
             return status;
         }
 
+        @JsonIgnore
         public Object getBody() {
             return body;
         }

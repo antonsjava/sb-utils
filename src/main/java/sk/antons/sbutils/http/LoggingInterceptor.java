@@ -3,19 +3,16 @@
  */
 package sk.antons.sbutils.http;
 
-import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpRequest;
 import org.springframework.http.HttpStatus;
@@ -23,6 +20,8 @@ import org.springframework.http.client.ClientHttpRequestExecution;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.web.client.RestTemplate;
+import sk.antons.sbutils.util.JsonStreamToString;
+import sk.antons.sbutils.util.XmlStreamToString;
 
 /**
  *
@@ -32,22 +31,18 @@ public class LoggingInterceptor implements ClientHttpRequestInterceptor {
 
     private Consumer<String> logger = null;
     private BooleanSupplier loggerEnabled = null;
-    private boolean logRequestHeader = true;
-    private boolean logRequestBody = true;
-    private boolean logResponseHeader = true;
-    private boolean logResponseBody = true;
-    private Function<String, String> requestBodyFormatter = null;
-    private Function<String, String> responseBodyFormatter = null;
+    private Function<HttpHeaders, String> requestHeaders = null;
+    private Function<HttpHeaders, String> responseHeaders = null;
+    private Function<InputStream, String> requestBody = null;
+    private Function<InputStream, String> responseBody = null;
 
     private LoggingInterceptor() {}
 
     public static LoggingInterceptor instance() { return new LoggingInterceptor(); }
-    public LoggingInterceptor logRequestHeader(boolean value) { this.logRequestHeader = value; return this; }
-    public LoggingInterceptor logRequestBody(boolean value) { this.logRequestBody = value; return this; }
-    public LoggingInterceptor requestBodyFormatter(Function<String, String> value) { this.requestBodyFormatter = value; return this; }
-    public LoggingInterceptor logResponseHeader(boolean value) { this.logResponseHeader = value; return this; }
-    public LoggingInterceptor logResponseBody(boolean value) { this.logResponseBody = value; return this; }
-    public LoggingInterceptor responseBodyFormatter(Function<String, String> value) { this.responseBodyFormatter = value; return this; }
+    public LoggingInterceptor requestHeaders(Function<HttpHeaders, String> value) { this.requestHeaders = value; return this; }
+    public LoggingInterceptor responseHeaders(Function<HttpHeaders, String> value) { this.responseHeaders = value; return this; }
+    public LoggingInterceptor requestBody(Function<InputStream, String> value) { this.requestBody = value; return this; }
+    public LoggingInterceptor responseBody(Function<InputStream, String> value) { this.responseBody = value; return this; }
     public LoggingInterceptor logger(Consumer<String> value) { this.logger = value; return this; }
     public LoggingInterceptor loggerEnabled(BooleanSupplier value) { this.loggerEnabled = value; return this; }
 
@@ -77,27 +72,13 @@ public class LoggingInterceptor implements ClientHttpRequestInterceptor {
                 .append("] ").append(request.getMethodValue())
                 .append(" ").append(request.getURI())
                 ;
-            if(logRequestHeader) {
-                sb.append(" headers[");
-                if(request.getHeaders() != null) {
-                    boolean first = true;
-                    for(Map.Entry<String, List<String>> entry : request.getHeaders().entrySet()) {
-                        String key = entry.getKey();
-                        for(String string : entry.getValue()) {
-                            if(first) first = false;
-                            else sb.append(", ");
-                            sb.append(key).append(": ").append(string);
-                        }
-                    }
-                }
-                sb.append("]");
+            if(requestHeaders != null) {
+                sb.append(" headers[").append(requestHeaders.apply(request.getHeaders())).append(']');
             }
-            if(logRequestBody) {
-                sb.append(" body[");
-                String s = new String(body);
-                if(requestBodyFormatter != null) s = requestBodyFormatter.apply(s);
-                sb.append(s);
-                sb.append("]");
+            if(requestBody != null) {
+                sb.append(" body[")
+                    .append(requestBody.apply(new ByteArrayInputStream(body)))
+                    .append("]");
             }
             logger.accept(sb.toString());
         }
@@ -112,11 +93,53 @@ public class LoggingInterceptor implements ClientHttpRequestInterceptor {
                 .append(" status:").append(response.getRawStatusCode())
                 .append(" time:").append(endtime - starttime)
                 ;
-            if(logResponseHeader) {
-                sb.append(" headers[");
-                if(response.getHeaders() != null) {
+            if(responseHeaders != null) {
+                sb.append(" headers[").append(responseHeaders.apply(response.getHeaders())).append(']');
+            }
+            if(responseBody != null) {
+                response = DuplicatedClientHttpResponse.instance(response, response.getBody());
+                sb.append(" body[")
+                    .append(responseBody.apply(response.getBody()))
+                    .append("]");
+            }
+            logger.accept(sb.toString());
+        }
+        return response;
+    }
+
+    private static class DuplicatedClientHttpResponse implements ClientHttpResponse {
+        private ClientHttpResponse delegate;
+        private byte[] body;
+        public static DuplicatedClientHttpResponse instance(ClientHttpResponse delegate, InputStream body) {
+            try {
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                body.transferTo(baos);
+                DuplicatedClientHttpResponse rv = new DuplicatedClientHttpResponse();
+                rv.delegate = delegate;
+                rv.body = baos.toByteArray();
+                return rv;
+            } catch(Exception e) {
+                throw new IllegalStateException(e);
+            }
+        }
+
+        public HttpStatus getStatusCode() throws IOException { return delegate.getStatusCode(); }
+        public int getRawStatusCode() throws IOException { return delegate.getRawStatusCode(); }
+        public String getStatusText() throws IOException { return delegate.getStatusText(); }
+        public void close() { delegate.close(); }
+        public HttpHeaders getHeaders() { return delegate.getHeaders(); }
+        public InputStream getBody() throws IOException { return new ByteArrayInputStream(body); }
+
+    }
+
+    public static class Headers {
+        public static Function<HttpHeaders, String> all() {
+            return headers -> {
+                StringBuffer sb = new StringBuffer();
+                sb.append("headers[");
+                if(headers != null) {
                     boolean first = true;
-                    for(Map.Entry<String, List<String>> entry : request.getHeaders().entrySet()) {
+                    for(Map.Entry<String, List<String>> entry : headers.entrySet()) {
                         String key = entry.getKey();
                         for(String string : entry.getValue()) {
                             if(first) first = false;
@@ -126,45 +149,46 @@ public class LoggingInterceptor implements ClientHttpRequestInterceptor {
                     }
                 }
                 sb.append("]");
-            }
-            if(logResponseBody) {
-                sb.append(" body[");
-                InputStreamReader isr = new InputStreamReader(
-                    response.getBody(), StandardCharsets.UTF_8);
-                String s = new BufferedReader(isr).lines()
-                    .collect(Collectors.joining("\n"));
-                InputStream is = null;
-                try {
-                    is = new ByteArrayInputStream(s.getBytes("utf-8"));
-                } catch(Exception e) {
+                return sb.toString();
+            };
+        }
+        public static Function<HttpHeaders, String> listed(final String... name) {
+            return headers -> {
+                StringBuffer sb = new StringBuffer();
+                sb.append("headers[");
+                if((headers != null) && (name != null)) {
+                    boolean first = true;
+                    for(Map.Entry<String, List<String>> entry : headers.entrySet()) {
+                        String key = entry.getKey();
+                        boolean match = false;
+                        for(String string : name) {
+                            if(key.equalsIgnoreCase(string)) {
+                                match = true;
+                                break;
+                            }
+                        }
+                        if(match) {
+                            for(String string : entry.getValue()) {
+                                if(first) first = false;
+                                else sb.append(", ");
+                                sb.append(key).append(": ").append(string);
+                            }
+                        }
+                    }
                 }
-
-                if(responseBodyFormatter != null) s = responseBodyFormatter.apply(s);
-                sb.append(s);
                 sb.append("]");
-                response = DummyClientHttpResponse.instance(response, is);
-            }
-            logger.accept(sb.toString());
+                return sb.toString();
+            };
         }
-        return response;
     }
 
-    private static class DummyClientHttpResponse implements ClientHttpResponse {
-        private ClientHttpResponse delegate;
-        private InputStream body;
-        public static DummyClientHttpResponse instance(ClientHttpResponse delegate, InputStream body) {
-            DummyClientHttpResponse rv = new DummyClientHttpResponse();
-            rv.delegate = delegate;
-            rv.body = body;
-            return rv;
+    public static class Body {
+        public static XmlStreamToString xml() {
+            return XmlStreamToString.instance();
         }
-
-        public HttpStatus getStatusCode() throws IOException { return delegate.getStatusCode(); }
-        public int getRawStatusCode() throws IOException { return delegate.getRawStatusCode(); }
-        public String getStatusText() throws IOException { return delegate.getStatusText(); }
-        public void close() { delegate.close(); }
-        public HttpHeaders getHeaders() { return delegate.getHeaders(); }
-        public InputStream getBody() throws IOException { return body; }
-
+        public static JsonStreamToString json() {
+            return JsonStreamToString.instance();
+        }
     }
+
 }
