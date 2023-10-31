@@ -1,5 +1,17 @@
 /*
+ * Copyright 2018 Anton Straka
  *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package sk.antons.sbutils.rest;
 
@@ -18,8 +30,30 @@ import org.springframework.web.util.UriComponentsBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatusCode;
+
 /**
+ * Helper implementation for RestTemplate usage.
  *
+ * {@code <pre>}
+ *  private RestTemplateClient client() {
+ *      RestTemplate template = templateBuilder
+ *          .additionalInterceptors(LoggingInterceptor
+ *              .instance()
+ *              .logger(m -> log.info(m))
+ *              .loggerEnabled(() -> log.isInfoEnabled())
+ *              .responseBody(LoggingInterceptor.Body.json().indent("  ").transform())
+ *              )
+ *          .build();
+ *      return RestTemplateClient.Builder.instance()
+ *          .template(template)
+ *          .root("https://dummy.restapiexample.com/api/v1")
+ *          .client();
+ *  }
+ *
+ *  public EmployeeResult getEmployees() {
+ *      return client().get().path("/employees").call(EmployeeResult.class);
+ *  }
+ * {@code </pre>}
  * @author antons
  */
 public class RestTemplateClient {
@@ -58,6 +92,9 @@ public class RestTemplateClient {
 
     public static int counter = 1;
 
+    /**
+     * RestTemplateClient builder
+     */
     public class Request {
         private HttpMethod method;
         private String path;
@@ -122,6 +159,9 @@ public class RestTemplateClient {
 
 
 
+    /**
+     * RestTemplateClient builder
+     */
     public static class Builder {
         private String root;
         private RestTemplate template = null;
@@ -129,9 +169,21 @@ public class RestTemplateClient {
         private Predicate<ResponseEntity> responseValidator = null;
 
         public static Builder instance() { return new Builder(); }
+        /**
+         * Url prefix. will be added to request paths.
+         */
         public Builder root(String value) { this.root = value; return this; }
+        /**
+         * RestTemplate used for call.
+         */
         public Builder template(RestTemplate value) { this.template = value; return this; }
+        /**
+         * HttpHeaders added to request. (Default is Content-Type: application/json)
+         */
         public Builder headers(BiFunction<String, Object, HttpHeaders> value) { this.headers = value; return this; }
+        /**
+         * Response checker for OK responses. (Default is result code is 2xx)
+         */
         public Builder responseValidator(Predicate<ResponseEntity> value) { this.responseValidator = value; return this; }
 
         public RestTemplateClient client() {
@@ -145,8 +197,14 @@ public class RestTemplateClient {
         }
     }
 
+    /**
+     * Default headers provider
+     */
     public static class Headers {
 
+        /**
+         * Add header Content-Type: xxx
+         */
         public static BiFunction<String, Object, HttpHeaders> contentTypeOnly(MediaType contentType) {
             return  (path, content) -> {
                 HttpHeaders headers = new HttpHeaders();
@@ -155,6 +213,9 @@ public class RestTemplateClient {
             };
         }
 
+        /**
+         * Add headers specified in map
+         */
         public static BiFunction<String, Object, HttpHeaders> simple(Map<String, String> map) {
             return  (path, content) -> {
                 HttpHeaders headers = new HttpHeaders();
@@ -167,8 +228,14 @@ public class RestTemplateClient {
 
     }
 
+    /**
+     * ResponseValidator builder (check if response is ok - if not exception is thrown.)
+     */
     public static class ResponseValidator {
 
+        /**
+         * Checks if response code is 2xx
+         */
         public static Predicate<ResponseEntity> successful() {
             return (response) -> {
                 if(response == null) return false;
@@ -177,6 +244,9 @@ public class RestTemplateClient {
             };
         }
 
+        /**
+         * Checks if response code is one of listed
+         */
         public static Predicate<ResponseEntity> listedCodes(final int... codes) {
             return (response) -> {
                 if(codes == null) return false;
@@ -190,6 +260,11 @@ public class RestTemplateClient {
         }
     }
 
+    /**
+     * Exception thrown if an error ocures od ResponseValidator returns false.
+     * It provides exception which was received or data of response if
+     * ResponseValidator returns false.
+     */
     public static class HttpException extends RuntimeException {
 
         private String url = null;

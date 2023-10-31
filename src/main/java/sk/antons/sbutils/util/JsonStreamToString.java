@@ -8,11 +8,18 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import sk.antons.jaul.xml.XmlFormat;
 import sk.antons.json.util.JsonFormat;
 
 
 /**
+ * Converts stream to json string using io.github.antonsjava:json.
+ * You can configure
+ * {@code <ul>}
+ * {@code <li>} encoding - encoding for conversion tpo chars
+ * {@code <li>} forceOneLine - true if json should be printed as one line
+ * {@code <li>} indent - indent text if json should be printed as formated
+ * {@code <li>} cufStringLiterals - max length of string literal (rest will be cut)
+ * {@code </ul>}
  *
  * @author antons
  */

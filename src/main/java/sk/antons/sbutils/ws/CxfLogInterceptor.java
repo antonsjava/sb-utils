@@ -1,5 +1,17 @@
 /*
+ * Copyright 2018 Anton Straka
  *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package sk.antons.sbutils.ws;
 
@@ -16,7 +28,7 @@ import org.apache.cxf.interceptor.Fault;
 import org.apache.cxf.phase.Phase;
 import sk.antons.sbutils.util.XmlStreamToString;
 /**
- *
+ * CXF interceptor for logging soap requests and responses.
  * @author antons
  */
 public class CxfLogInterceptor extends AbstractSoapInterceptor {
@@ -30,6 +42,7 @@ public class CxfLogInterceptor extends AbstractSoapInterceptor {
         super(out?Phase.MARSHAL:Phase.RECEIVE);
         this.out = out;
     }
+
     public static CxfLogInterceptor out() { return new CxfLogInterceptor(true); }
     public static CxfLogInterceptor in() { return new CxfLogInterceptor(false); }
 
@@ -37,10 +50,22 @@ public class CxfLogInterceptor extends AbstractSoapInterceptor {
         return new CxfLogInterceptor(out);
     }
 
+    /**
+     * Logger to log messages
+     */
     public CxfLogInterceptor logger(Consumer<String> value) { this.logger = value; return this; }
+    /**
+     * Method which determine if logger is enabled
+     */
     public CxfLogInterceptor loggerEnabled(BooleanSupplier value) { this.loggerEnabled = value; return this; }
+    /**
+     * Format request or response xml.
+     */
     public CxfLogInterceptor format(Function<InputStream, String> value) { this.format = value; return this; }
 
+    /**
+     * Provides xml formatting.
+     */
     public static class Format {
         public static XmlStreamToString xml() { return XmlStreamToString.instance(); }
     }
