@@ -13,10 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/**
- * Spring boot WS interceptor for logging soap requests and responses.
- * @author antons
- */
 package sk.antons.sbutils.ws;
 
 import java.io.ByteArrayInputStream;
@@ -35,6 +31,10 @@ import org.springframework.ws.context.MessageContext;
 import sk.antons.sbutils.util.XmlStreamToString;
 
 
+/**
+ * Spring boot WS interceptor for logging soap requests and responses.
+ * @author antons
+ */
 public class SBWSLoggingInterceptor implements ClientInterceptor {
 
     private Consumer<String> logger = null;
