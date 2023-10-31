@@ -1,3 +1,18 @@
+/*
+ * Copyright 2018 Anton Straka
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package sk.antons.sbutils.ws;
 
 import java.io.ByteArrayInputStream;
@@ -16,6 +31,10 @@ import org.springframework.ws.context.MessageContext;
 import sk.antons.sbutils.util.XmlStreamToString;
 
 
+/**
+ * Spring boot WS interceptor for logging soap requests and responses.
+ * @author antons
+ */
 public class SBWSLoggingInterceptor implements ClientInterceptor {
 
     private Consumer<String> logger = null;
@@ -25,10 +44,22 @@ public class SBWSLoggingInterceptor implements ClientInterceptor {
     private SBWSLoggingInterceptor() {}
     public static SBWSLoggingInterceptor instance() { return new SBWSLoggingInterceptor(); }
 
+    /**
+     * Logger to log messages
+     */
     public SBWSLoggingInterceptor logger(Consumer<String> value) { this.logger = value; return this; }
+    /**
+     * Method which determine if logger is enabled
+     */
     public SBWSLoggingInterceptor loggerEnabled(BooleanSupplier value) { this.loggerEnabled = value; return this; }
+    /**
+     * Format request or response xml.
+     */
     public SBWSLoggingInterceptor format(Function<InputStream, String> value) { this.format = value; return this; }
 
+    /**
+     * Provides xml formatting.
+     */
     public static class Format {
         public static XmlStreamToString xml() { return XmlStreamToString.instance(); }
     }
