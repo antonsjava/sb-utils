@@ -16,6 +16,8 @@
 package sk.antons.sbutils.rest;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.net.URLEncoder;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
@@ -23,13 +25,14 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatusCode;
+import sk.antons.jaul.binary.Base64;
 
 /**
  * Helper implementation for RestTemplate usage.
@@ -226,6 +229,33 @@ public class RestTemplateClient {
             };
         }
 
+
+        private HttpHeaders headers = new HttpHeaders();
+
+        /**
+         * Helper for build static headers step by step
+         */
+        public static Headers builder() {
+            Headers h = new Headers();
+            h.headers = new HttpHeaders();
+            return h;
+        }
+
+        /**
+         * build header builder with statically created headers.
+         */
+        public BiFunction<String, Object, HttpHeaders> build() {
+            return  (path, content) -> {
+                return headers;
+            };
+        }
+
+        public Headers contentType(MediaType value) { headers.setContentType(value); return this; }
+        public Headers accept(MediaType... value) { headers.setAccept(Arrays.asList(value)); return this; }
+        public Headers setAll(Map<String, String> value) { headers.setAll(value); return this; }
+        public Headers add(String key, String... value) { headers.addAll(key, Arrays.asList(value));return this; }
+        public Headers basicAuth(String user, String password) { add("Authorization", "Basic " + Base64.standard().encode((user+":"+password).getBytes())); return this; }
+
     }
 
     /**
@@ -317,5 +347,40 @@ public class RestTemplateClient {
             return sb.toString();
         }
 
+    }
+
+    /**
+     * Path builder
+     */
+    public static class Path extends RuntimeException {
+
+        private String encoding = "utf-8";
+        private StringBuilder buff = new StringBuilder();
+        private boolean alreadyQuery = false;
+
+        private Path() {}
+        public static Path builder() { return new Path(); }
+        public static Path builder(String encoding) { Path p = new Path(); p.encoding = encoding; return p; }
+
+        public String build() { return buff.toString(); }
+        public Path append(String value) { this.buff.append(value); return this; }
+        public Path pathVariable(String value) { this.buff.append(encode(value)); return this; }
+        public Path query(String key, String value) {
+            if(!alreadyQuery) alreadyQuery = buff.toString().contains("?");
+            this.buff.append((alreadyQuery ? '&' : '?'));
+            this.buff.append(encode(key)).append('=').append(encode(value));
+            alreadyQuery = true;
+            return this;
+        }
+
+        private String encode(String value) {
+            if(value == null) return "";
+            if("".equals(value)) return "";
+            try {
+                return URLEncoder.encode(value, encoding);
+            } catch(Exception e) {
+                throw new IllegalArgumentException("unable to encode " + value, e);
+            }
+        }
     }
 }
