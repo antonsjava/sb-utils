@@ -179,6 +179,14 @@ public class JsonExceptionHandler {
                 node = (ObjectNode)om().valueToTree(t);
             } catch(Exception e) {
                 node = new ObjectNode(JsonNodeFactory.instance);
+                ArrayNode arr = om().createArrayNode();
+                Throwable tt = t;
+                while(tt != null) {
+                    arr.add(tt.getClass().getSimpleName() + ": " + tt.getMessage());
+                    tt = tt.getCause();
+                }
+                node.put("serializationError", e.getMessage());
+                node.put("causedBy", arr);
             }
             node.put("class", t.getClass().getSimpleName());
             return node;
@@ -190,6 +198,14 @@ public class JsonExceptionHandler {
                 node = (ObjectNode)om().valueToTree(t);
             } catch(Exception e) {
                 node = new ObjectNode(JsonNodeFactory.instance);
+                ArrayNode arr = om().createArrayNode();
+                Throwable tt = t;
+                while(tt != null) {
+                    arr.add(tt.getClass().getSimpleName() + ": " + tt.getMessage());
+                    tt = tt.getCause();
+                }
+                node.put("causedBy", arr);
+                node.put("serializationError", e.getMessage());
             }
             node.put("class", t.getClass().getSimpleName());
             if(info.allMessages.size() > 1) {
