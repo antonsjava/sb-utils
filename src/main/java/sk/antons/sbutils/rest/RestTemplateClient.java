@@ -32,6 +32,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.web.client.HttpClientErrorException;
 import sk.antons.jaul.binary.Base64;
 
 /**
@@ -149,6 +150,7 @@ public class RestTemplateClient {
             } catch (Throwable e) {
                 if(log.isDebugEnabled()) log.debug("res[{}] {} {} err: {}", id, method.name(), url(), e.toString());
                 if(e instanceof HttpException) throw (HttpException)e;
+                else if(e instanceof HttpClientErrorException) { HttpClientErrorException ee = (HttpClientErrorException)e; throw new HttpException(e).url(url()).method(method).status(ee.getStatusCode()); }
                 else throw new HttpException(e).url(url()).method(method);
             }
 
@@ -315,6 +317,7 @@ public class RestTemplateClient {
         }
         public HttpException url(String value) { this.url = value; return this; }
         public HttpException method(HttpMethod value) { this.method = value; return this; }
+        public HttpException status(HttpStatusCode value) { this.status = value; return this; }
 
         @JsonIgnore
         public HttpHeaders getHeaders() {
@@ -330,8 +333,17 @@ public class RestTemplateClient {
             return body;
         }
 
+        @JsonIgnore
         public Throwable getError() {
             return error;
+        }
+
+        public String getUrl() {
+            return url;
+        }
+
+        public HttpMethod getMethod() {
+            return method;
         }
 
         @Override
