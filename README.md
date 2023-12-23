@@ -105,5 +105,26 @@ simple http client logging interceptor
 ~~~
 
 
-./main/java/sk/antons/sbutils/ws/CxfLogInterceptor.java
-./main/java/sk/antons/sbutils/ws/SBWSLoggingInterceptor.java
+
+## CxfLogInterceptor
+
+simple webcservice client log interceptor for cxf.
+
+~~~java
+ CxfLogInterceptor.out()
+     // optional .format(is -> formatInputStreamToOneLineXml(is)) 
+     .loggerEnabled( () -> true) // if interceptor is enabled
+     .logger(m -> System.out.println(m)) // how to log message
+~~~
+
+## SBWSLoggingInterceptor
+
+simple web service client log interceptor for SB web services.
+
+~~~java
+ SBWSLoggingInterceptor.instance()
+     // optional .format(is -> formatInputStreamToOneLineXml(is)) 
+     .loggerEnabled( () -> true) // if interceptor is enabled
+     .logger(m -> System.out.println(m)) // how to log message
+~~~
+
