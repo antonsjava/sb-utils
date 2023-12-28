@@ -116,7 +116,7 @@ public class LoggingInterceptor implements ClientHttpRequestInterceptor {
         if((loggerEnabled != null) && (loggerEnabled.getAsBoolean()) && (logger != null)) {
             StringBuilder sb = new StringBuilder();
             sb.append("http-req[").append(reqnum)
-                .append("] ").append(request.getMethodValue())
+                .append("] ").append(request.getMethod())
                 .append(" ").append(request.getURI())
                 ;
             if(requestHeaders != null) {
@@ -135,9 +135,9 @@ public class LoggingInterceptor implements ClientHttpRequestInterceptor {
         if((loggerEnabled != null) && (loggerEnabled.getAsBoolean()) && (logger != null)) {
             StringBuilder sb = new StringBuilder();
             sb.append("http-res[").append(reqnum)
-                .append("] ").append(request.getMethodValue())
+                .append("] ").append(request.getMethod())
                 .append(" ").append(request.getURI())
-                .append(" status:").append(response.getRawStatusCode())
+                .append(" status:").append(response.getStatusCode().value())
                 .append(" time:").append(endtime - starttime)
                 ;
             if(responseHeaders != null) {
