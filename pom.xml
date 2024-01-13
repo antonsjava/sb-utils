@@ -4,7 +4,7 @@
 
     <groupId>io.github.antonsjava</groupId>
     <artifactId>sb-utils</artifactId>
-    <version>3.1</version>
+    <version>3.2</version>
     <packaging>jar</packaging>
 
     <name>sb-utils</name>
