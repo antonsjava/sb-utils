@@ -18,6 +18,7 @@ package sk.antons.sbutils.rest;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.net.URLEncoder;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
@@ -110,6 +111,16 @@ public class RestTemplateClient {
         public Request path(String value) { this.path = value; return this; }
         public Request content(Object value) { this.content = value; return this; }
         public Request headers(HttpHeaders value) { this.headers = value; return this; }
+        public Request header(String name, String value) { headers().add(name, value); return this; }
+        public Request contentType(MediaType value) { headers().setContentType(value); return this; }
+        public Request accept(MediaType... value) { headers().setAccept(List.of(value)); return this; }
+        public Request basicAuth(String value) { headers().setBasicAuth(value); return this; }
+        public Request basicAuth(String user, String password) { headers().setBasicAuth(user, password); return this; }
+        public Request bearerAuth(String token) { headers().setBearerAuth(token); return this; }
+        private HttpHeaders headers() {
+            if(headers == null) headers = new HttpHeaders();
+            return headers;
+        }
 
         public void call() { call(String.class, null); }
         public <T> T call(Class<T> clazz) { return call(clazz, null); }
