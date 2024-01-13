@@ -32,6 +32,7 @@ import org.springframework.http.client.ClientHttpRequestExecution;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.web.client.RestTemplate;
+import sk.antons.sbutils.util.AsIsStreamToString;
 import sk.antons.sbutils.util.JsonStreamToString;
 import sk.antons.sbutils.util.XmlStreamToString;
 
@@ -257,6 +258,12 @@ public class LoggingInterceptor implements ClientHttpRequestInterceptor {
          */
         public static JsonStreamToString json() {
             return JsonStreamToString.instance();
+        }
+        /**
+         * Prints content as is.
+         */
+        public static AsIsStreamToString asIs() {
+            return AsIsStreamToString.instance();
         }
     }
 
