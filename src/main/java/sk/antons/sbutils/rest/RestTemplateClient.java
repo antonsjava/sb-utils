@@ -16,6 +16,7 @@
 package sk.antons.sbutils.rest;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.net.URI;
 import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.List;
@@ -30,7 +31,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriComponentsBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.client.HttpClientErrorException;
@@ -132,20 +132,22 @@ public class RestTemplateClient {
             long requesttime = 0;
             try {
 
-                UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(url());
+                //UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(url());
+                URI uri = URI.create(url());
 
                 HttpEntity<?> entity = new HttpEntity<>(content, headers == null ? RestTemplateClient.this.headers().apply(path, content) : headers);
 
                 ResponseEntity<T> response = null;
                 if(clazz != null) {
                     response = RestTemplateClient.this.template
-                        .exchange(builder.build().toUriString()
+                        //.exchange(builder.build().toUriString()
+                        .exchange(uri
                             , method
                             , entity
                             , clazz);
                 } else {
                     response = RestTemplateClient.this.template
-                        .exchange(builder.build().toUriString()
+                        .exchange(uri
                             , method
                             , entity
                             , type);
