@@ -191,7 +191,6 @@ public class LoggingInterceptor implements ClientHttpRequestInterceptor {
         public static Function<HttpHeaders, String> all() {
             return headers -> {
                 StringBuffer sb = new StringBuffer();
-                sb.append("headers[");
                 if(headers != null) {
                     boolean first = true;
                     for(Map.Entry<String, List<String>> entry : headers.entrySet()) {
@@ -203,7 +202,6 @@ public class LoggingInterceptor implements ClientHttpRequestInterceptor {
                         }
                     }
                 }
-                sb.append("]");
                 return sb.toString();
             };
         }
@@ -215,7 +213,6 @@ public class LoggingInterceptor implements ClientHttpRequestInterceptor {
         public static Function<HttpHeaders, String> listed(final String... name) {
             return headers -> {
                 StringBuffer sb = new StringBuffer();
-                sb.append("headers[");
                 if((headers != null) && (name != null)) {
                     boolean first = true;
                     for(Map.Entry<String, List<String>> entry : headers.entrySet()) {
@@ -236,7 +233,6 @@ public class LoggingInterceptor implements ClientHttpRequestInterceptor {
                         }
                     }
                 }
-                sb.append("]");
                 return sb.toString();
             };
         }
