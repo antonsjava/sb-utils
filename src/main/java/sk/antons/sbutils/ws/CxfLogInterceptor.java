@@ -39,7 +39,7 @@ public class CxfLogInterceptor extends AbstractSoapInterceptor {
     private boolean out = false;
 
     public CxfLogInterceptor(boolean out) {
-        super(out?Phase.MARSHAL:Phase.RECEIVE);
+        super(out?Phase.PRE_STREAM:Phase.RECEIVE);
         this.out = out;
     }
 
