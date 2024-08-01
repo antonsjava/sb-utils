@@ -158,12 +158,14 @@ public class RestTemplateClient {
                 if(RestTemplateClient.this.responseValidator().test(response)) {
                     return response.getBody();
                 } else {
-                    throw new HttpException(response).method(method).url(url());
+                    throw new HttpException(response).method(method).url(url()).body(response.getBody());
                 }
+            } catch (HttpClientErrorException e) {
+                if(log.isDebugEnabled()) log.debug("res[{}] {} {} err: {}", id, method.name(), url(), e.toString());
+                throw new HttpException(e).url(url()).method(method).status(e.getStatusCode()).body(e.getResponseBodyAsString());
             } catch (Throwable e) {
                 if(log.isDebugEnabled()) log.debug("res[{}] {} {} err: {}", id, method.name(), url(), e.toString());
                 if(e instanceof HttpException) throw (HttpException)e;
-                else if(e instanceof HttpClientErrorException) { HttpClientErrorException ee = (HttpClientErrorException)e; throw new HttpException(e).url(url()).method(method).status(ee.getStatusCode()); }
                 else throw new HttpException(e).url(url()).method(method);
             }
 
@@ -331,6 +333,7 @@ public class RestTemplateClient {
         public HttpException url(String value) { this.url = value; return this; }
         public HttpException method(HttpMethod value) { this.method = value; return this; }
         public HttpException status(HttpStatusCode value) { this.status = value; return this; }
+        public HttpException body(Object value) { this.body = value; return this; }
 
         @JsonIgnore
         public HttpHeaders getHeaders() {
@@ -377,7 +380,7 @@ public class RestTemplateClient {
     /**
      * Path builder
      */
-    public static class Path extends RuntimeException {
+    public static class Path {
 
         private String encoding = "utf-8";
         private StringBuilder buff = new StringBuilder();
