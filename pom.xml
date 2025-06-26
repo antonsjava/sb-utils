@@ -4,7 +4,7 @@
 
     <groupId>io.github.antonsjava</groupId>
     <artifactId>sb-utils</artifactId>
-    <version>3.7</version>
+    <version>3.8</version>
     <packaging>jar</packaging>
 
     <name>sb-utils</name>
@@ -59,6 +59,11 @@
 
     <dependencies>
         <dependency>
+            <groupId>io.github.antonsjava</groupId>
+            <artifactId>log-helpers</artifactId>
+            <version>1.0</version>
+        </dependency>
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
 			<version>${spring-boot.version}</version>
@@ -74,18 +79,6 @@
             <groupId>org.apache.cxf</groupId>
             <artifactId>cxf-rt-bindings-soap</artifactId>
             <version>3.6.2</version>
-			<scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.github.antonsjava</groupId>
-            <artifactId>jaul</artifactId>
-            <version>1.37</version>
-			<scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.github.antonsjava</groupId>
-            <artifactId>json</artifactId>
-            <version>1.17</version>
 			<scope>provided</scope>
         </dependency>
         <dependency>

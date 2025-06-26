@@ -20,7 +20,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import sk.antons.json.util.JsonFormat;
+import sk.antons.loghelpers.format.JsonFormat;
 
 
 /**
@@ -41,11 +41,13 @@ public class JsonStreamToString {
     boolean forceOneLine;
     String indent;
     int cufStringLiteralsLength;
+    int expectedLength = 4096;
     public static JsonStreamToString instance() { return new JsonStreamToString(); }
     public JsonStreamToString encoding(String value) { this.encoding = value; return this; }
     public JsonStreamToString forceOneLine() { this.forceOneLine = true; this.formated = true; return this; }
     public JsonStreamToString indent(String value) { this.indent = value; this.formated = true; return this; }
     public JsonStreamToString cufStringLiterals(int value) { this.cufStringLiteralsLength = value; this.formated = true; return this; }
+    public JsonStreamToString expectedLength(int value) { this.expectedLength = value; this.formated = true; return this; }
 
     public Function<InputStream, String> transform() {
         if(formated) return formatted();
@@ -61,7 +63,7 @@ public class JsonStreamToString {
     private Function<InputStream, String> formatted() {
         return is -> {
             try {
-                JsonFormat format = JsonFormat.from(new InputStreamReader(is, encoding));
+                JsonFormat format = JsonFormat.from(new InputStreamReader(is, encoding)).expectedLength(expectedLength);
                 if(cufStringLiteralsLength > 0) format.cutStringLiterals(cufStringLiteralsLength);
                 if(indent != null) format.indent(indent);
                 else if(forceOneLine) format.noindent();

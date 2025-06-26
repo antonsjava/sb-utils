@@ -49,6 +49,8 @@ public class LoggingInterceptor implements ClientHttpRequestInterceptor {
     private Function<HttpHeaders, String> responseHeaders = null;
     private Function<InputStream, String> requestBody = null;
     private Function<InputStream, String> responseBody = null;
+    private int expectedRequestLength = 4096;
+    private int expectedResponseLength = 4096;
 
     private LoggingInterceptor() {}
 
@@ -89,6 +91,18 @@ public class LoggingInterceptor implements ClientHttpRequestInterceptor {
      * @return this
      */
     public LoggingInterceptor loggerEnabled(BooleanSupplier value) { this.loggerEnabled = value; return this; }
+    /**
+     * Expected request length. (default 4096)
+     * @param value new length
+     * @return this
+     */
+    public LoggingInterceptor expectedRequestLength(int value) { this.expectedRequestLength = value; return this; }
+    /**
+     * Expected response length. (default 4096)
+     * @param value new length
+     * @return this
+     */
+    public LoggingInterceptor expectedResponseLength(int value) { this.expectedResponseLength = value; return this; }
 
 
     /**
@@ -115,7 +129,7 @@ public class LoggingInterceptor implements ClientHttpRequestInterceptor {
     public ClientHttpResponse intercept(HttpRequest request, byte[] body, ClientHttpRequestExecution execution) throws IOException {
         int reqnum = counter++;
         if((loggerEnabled != null) && (loggerEnabled.getAsBoolean()) && (logger != null)) {
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new StringBuilder(expectedRequestLength);
             sb.append("http-req[").append(reqnum)
                 .append("] ").append(request.getMethod())
                 .append(" ").append(request.getURI())
@@ -134,7 +148,7 @@ public class LoggingInterceptor implements ClientHttpRequestInterceptor {
         ClientHttpResponse response = execution.execute(request, body);
         long endtime = System.currentTimeMillis();
         if((loggerEnabled != null) && (loggerEnabled.getAsBoolean()) && (logger != null)) {
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new StringBuilder(expectedResponseLength);
             sb.append("http-res[").append(reqnum)
                 .append("] ").append(request.getMethod())
                 .append(" ").append(request.getURI())
@@ -190,7 +204,7 @@ public class LoggingInterceptor implements ClientHttpRequestInterceptor {
          */
         public static Function<HttpHeaders, String> all() {
             return headers -> {
-                StringBuffer sb = new StringBuffer();
+                StringBuffer sb = new StringBuffer(300);
                 if(headers != null) {
                     boolean first = true;
                     for(Map.Entry<String, List<String>> entry : headers.entrySet()) {
@@ -212,7 +226,7 @@ public class LoggingInterceptor implements ClientHttpRequestInterceptor {
          */
         public static Function<HttpHeaders, String> listed(final String... name) {
             return headers -> {
-                StringBuffer sb = new StringBuffer();
+                StringBuffer sb = new StringBuffer(300);
                 if((headers != null) && (name != null)) {
                     boolean first = true;
                     for(Map.Entry<String, List<String>> entry : headers.entrySet()) {
@@ -250,16 +264,34 @@ public class LoggingInterceptor implements ClientHttpRequestInterceptor {
             return XmlStreamToString.instance();
         }
         /**
+         * Converts content to xml and allows to format it.
+         */
+        public static XmlStreamToString xml(int expectedLength) {
+            return XmlStreamToString.instance().expectedLength(expectedLength);
+        }
+        /**
          * Converts content to json and allows to format it.
          */
         public static JsonStreamToString json() {
             return JsonStreamToString.instance();
         }
         /**
+         * Converts content to json and allows to format it.
+         */
+        public static JsonStreamToString json(int expectedLength) {
+            return JsonStreamToString.instance().expectedLength(expectedLength);
+        }
+        /**
          * Prints content as is.
          */
         public static AsIsStreamToString asIs() {
             return AsIsStreamToString.instance();
+        }
+        /**
+         * Prints content as is.
+         */
+        public static AsIsStreamToString asIs(int expectedLength) {
+            return AsIsStreamToString.instance().expectedLength(expectedLength);
         }
     }
 

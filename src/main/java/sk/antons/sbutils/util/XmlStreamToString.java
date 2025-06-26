@@ -20,7 +20,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import sk.antons.jaul.xml.XmlFormat;
+import sk.antons.loghelpers.format.XmlFormat;
 
 
 /**
@@ -41,11 +41,13 @@ public class XmlStreamToString {
     boolean forceOneLine;
     String indent;
     int cufStringLiteralsLength;
+    int expectedLength = 4096;
     public static XmlStreamToString instance() { return new XmlStreamToString(); }
     public XmlStreamToString encoding(String value) { this.encoding = value; return this; }
     public XmlStreamToString forceOneLine() { this.forceOneLine = true; this.formated = true; return this; }
     public XmlStreamToString indent(String value) { this.indent = value; this.formated = true; return this; }
     public XmlStreamToString cufStringLiterals(int value) { this.cufStringLiteralsLength = value; this.formated = true; return this; }
+    public XmlStreamToString expectedLength(int value) { this.expectedLength = value; this.formated = true; return this; }
 
     public Function<InputStream, String> transform() {
         if(formated) return formatted();
@@ -54,13 +56,13 @@ public class XmlStreamToString {
 
     private Function<InputStream, String> asIs() {
         return is -> {
-            return readStream(is, encoding);
+            return readStream(is, encoding, expectedLength);
         };
     }
 
     private Function<InputStream, String> formatted() {
         return is -> {
-            String xml = readStream(is, encoding);
+            String xml = readStream(is, encoding, expectedLength);
             XmlFormat format = XmlFormat.instance(xml, 0);
             if(cufStringLiteralsLength > 0) format.cutStringLiterals(cufStringLiteralsLength);
             if(indent != null) format.indent(indent);
@@ -69,11 +71,11 @@ public class XmlStreamToString {
         };
     }
 
-    private static String readStream(InputStream is, String encoding) {
+    private static String readStream(InputStream is, String encoding, int expectedLength) {
         if(is == null) return null;
         try {
             InputStreamReader isr = new InputStreamReader(is, encoding);
-            String s = new BufferedReader(isr).lines()
+            String s = new BufferedReader(isr, expectedLength).lines()
                 .collect(Collectors.joining("\n"));
             return s;
         } catch(Exception e) {

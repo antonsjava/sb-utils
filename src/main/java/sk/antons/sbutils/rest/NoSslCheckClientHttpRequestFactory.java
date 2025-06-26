@@ -15,7 +15,6 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
-import sk.antons.jaul.util.AsRuntimeEx;
 
 /**
  *
@@ -66,7 +65,8 @@ public class NoSslCheckClientHttpRequestFactory extends SimpleClientHttpRequestF
             DUMMY_SSLCONTEXT = SSLContext.getInstance("SSL");
             DUMMY_SSLCONTEXT.init(null, DUMMY_TRUST_MANAGER, new SecureRandom());
         } catch (Exception e) {
-            throw AsRuntimeEx.of(e);
+            if(e instanceof RuntimeException) throw (RuntimeException)e;
+            else throw new RuntimeException(e);
         }
     }
 
