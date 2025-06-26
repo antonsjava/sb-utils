@@ -94,7 +94,7 @@ public class EnvPrinter {
      * @return info
      */
     public String printBySources() {
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder(300);
         if(env instanceof AbstractEnvironment) {
             for(Iterator it = ((AbstractEnvironment) env).getPropertySources().iterator(); it.hasNext(); ) {
                 PropertySource propertySource = (PropertySource) it.next();
@@ -147,7 +147,7 @@ public class EnvPrinter {
      * @return info
      */
     public String print() {
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder(300);
         for(String key : propertyNames) {
             String value = env.getProperty(key);
             if(value == null) continue;

@@ -38,23 +38,25 @@ public class AsIsStreamToString {
     String forceOneLine;
     String newlineReplacer;
     int cutTo;
+    int expectedLength = 4096;
     public static AsIsStreamToString instance() { return new AsIsStreamToString(); }
     public AsIsStreamToString encoding(String value) { this.encoding = value; return this; }
     public AsIsStreamToString forceOneLine() { this.newlineReplacer = " "; return this; }
     public AsIsStreamToString newlineReplacer(String value) { this.newlineReplacer = value; return this; }
     public AsIsStreamToString cutTo(int value) { this.cutTo = value; return this; }
+    public AsIsStreamToString expectedLength(int value) { this.expectedLength = value; return this; }
 
     public Function<InputStream, String> transform() {
         return is -> {
-            return readStream(is, encoding);
+            return readStream(is, encoding, expectedLength);
         };
     }
 
-    private String readStream(InputStream is, String encoding) {
+    private String readStream(InputStream is, String encoding, int expectedLength) {
         if(is == null) return null;
         try {
             Reader reader = new InputStreamReader(is, encoding);
-            StringBuilder sb = new StringBuilder(4096);
+            StringBuilder sb = new StringBuilder(expectedLength);
             int index = 0;
             int c;
             while ((c = reader.read()) != -1) {

@@ -19,6 +19,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
@@ -34,7 +35,6 @@ import org.springframework.web.client.RestTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.client.HttpClientErrorException;
-import sk.antons.jaul.binary.Base64;
 
 /**
  * Helper implementation for RestTemplate usage.
@@ -271,7 +271,7 @@ public class RestTemplateClient {
         public Headers accept(MediaType... value) { headers.setAccept(Arrays.asList(value)); return this; }
         public Headers setAll(Map<String, String> value) { headers.setAll(value); return this; }
         public Headers add(String key, String... value) { headers.addAll(key, Arrays.asList(value));return this; }
-        public Headers basicAuth(String user, String password) { add("Authorization", "Basic " + Base64.standard().encode((user+":"+password).getBytes())); return this; }
+        public Headers basicAuth(String user, String password) { add("Authorization", "Basic " + Base64.getEncoder().encode((user+":"+password).getBytes())); return this; }
 
     }
 
@@ -364,7 +364,7 @@ public class RestTemplateClient {
 
         @Override
         public String getMessage() {
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new StringBuilder(300);
             sb.append("request failed -");
             if(method != null) sb.append(" ").append(method);
             if(url != null) sb.append(" to ").append(url);
@@ -383,7 +383,7 @@ public class RestTemplateClient {
     public static class Path {
 
         private String encoding = "utf-8";
-        private StringBuilder buff = new StringBuilder();
+        private StringBuilder buff = new StringBuilder(300);
         private boolean alreadyQuery = false;
 
         private Path() {}
