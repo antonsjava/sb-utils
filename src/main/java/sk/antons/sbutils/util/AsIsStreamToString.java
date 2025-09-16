@@ -64,7 +64,7 @@ public class AsIsStreamToString {
                     sb.append("...");
                     break;
                 }
-                if((newlineReplacer != null) && (c == '\n')) {
+                if((newlineReplacer != null) && ((c == '\n') || (c == '\r'))) {
                     sb.append(newlineReplacer);
                 } else {
                     sb.append((char)c);
