@@ -35,7 +35,6 @@ import java.util.function.Function;
  */
 public class AsIsStreamToString {
     String encoding = "utf-8";
-    String forceOneLine;
     String newlineReplacer;
     int cutTo;
     int expectedLength = 4096;
@@ -64,8 +63,9 @@ public class AsIsStreamToString {
                     sb.append("...");
                     break;
                 }
-                if((newlineReplacer != null) && ((c == '\n') || (c == '\r'))) {
+                if((newlineReplacer != null) && (c == '\n')) {
                     sb.append(newlineReplacer);
+                } else if((newlineReplacer != null) && (c == '\r')) {
                 } else {
                     sb.append((char)c);
                 }
