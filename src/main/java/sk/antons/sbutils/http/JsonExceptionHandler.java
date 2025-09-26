@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -223,7 +224,9 @@ public class JsonExceptionHandler {
             if(om == null) {
                 ObjectMapper o = new ObjectMapper();
                 o.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+                o.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
                 o.configure(SerializationFeature.INDENT_OUTPUT, true);
+                o.registerModule(new JavaTimeModule());
                 o.addMixIn(Throwable.class, MixIn.class);
                 om = o;
             }
