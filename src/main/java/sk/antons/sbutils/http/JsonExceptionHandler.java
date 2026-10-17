@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import org.springframework.http.HttpStatus;
@@ -79,7 +80,7 @@ public class JsonExceptionHandler {
     private static Logger log = LoggerFactory.getLogger(JsonExceptionHandler.class);
 
     private Consumer<Throwable> logger = null;
-    private Function<Throwable, HttpStatus> statusResolver = DefaultStatusResolver.instance();
+    private Function<Class<Throwable>, HttpStatus> statusResolver = DefaultStatusResolver.instance();
     private Function<Throwable, ObjectNode> processor = null;
 
     public static JsonExceptionHandler instance() { return new JsonExceptionHandler(); }
@@ -95,7 +96,7 @@ public class JsonExceptionHandler {
      * @param value method
      * @return this
      */
-    public JsonExceptionHandler statusResolver(Function<Throwable, HttpStatus> value) { this.statusResolver = value; return this; }
+    public JsonExceptionHandler statusResolver(Function<Class<Throwable>, HttpStatus> value) { this.statusResolver = value; return this; }
     /**
      * method for converting exception to json response
      * @param value method
@@ -146,8 +147,7 @@ public class JsonExceptionHandler {
 
 
         if(ei.status == null) {
-            HttpStatus status = null;
-            if(statusResolver != null) status = statusResolver.apply(t);
+            HttpStatus status = resolveStatusInHierarchy((Class<Throwable>)t.getClass());
             if(status != null) {
                 ei.markedExc = t;
                 ei.status = status;
@@ -156,6 +156,26 @@ public class JsonExceptionHandler {
 
         resolve(t.getCause(), ei);
     }
+
+    private Map<Class, Optional<HttpStatus>> cachedStatuses = new HashMap<>();
+    private HttpStatus resolveStatusInHierarchy(Class<Throwable> clazz) {
+        HttpStatus status = null;
+        Class<Throwable> cl = clazz;
+        while(cl != null) {
+            Optional<HttpStatus> ostatus = cachedStatuses.get(cl);
+            if(ostatus != null) return ostatus.get();
+            if(statusResolver != null) status = statusResolver.apply(cl);
+            if(status != null) {
+                cachedStatuses.put(cl, Optional.of(status));
+                cachedStatuses.put(clazz, Optional.of(status));
+                return status;
+            }
+            cl = (Class<Throwable>)cl.getSuperclass();
+        }
+        cachedStatuses.put(clazz, Optional.empty());
+        return null;
+    }
+
 
     private static class ExceptionInfo {
         Throwable lastExc;
@@ -248,10 +268,11 @@ public class JsonExceptionHandler {
      * Resolve http status from exception class. It is searching ResponseStatus annotation or
      * static int httpCode() function. After status is resolved it is cached for given class.
      * Allows also define status for custom exception classes.
+     * if class not define status code null is returned;
      */
-    public static class DefaultStatusResolver implements Function<Throwable, HttpStatus> {
+    public static class DefaultStatusResolver implements Function<Class<Throwable>, HttpStatus> {
 
-        private Map<Class, HttpStatus> cache = new HashMap<>();
+        private Map<Class<Throwable>, HttpStatus> adhocStatuses = new HashMap<>();
 
         public static DefaultStatusResolver instance() { return new DefaultStatusResolver(); }
 
@@ -261,28 +282,27 @@ public class JsonExceptionHandler {
          * @param status
          * @return this
          */
-        public DefaultStatusResolver status(Class exceptionClass, HttpStatus status) {
+        public DefaultStatusResolver status(Class<Throwable> exceptionClass, HttpStatus status) {
             if(exceptionClass == null) throw new IllegalArgumentException("no exceptionClass");
             if(status == null) throw new IllegalArgumentException("no status");
-            cache.put(exceptionClass, status);
+            adhocStatuses.put(exceptionClass, status);
             return this;
         }
 
         @Override
-        public HttpStatus apply(Throwable t) {
-            if(t == null) return HttpStatus.INTERNAL_SERVER_ERROR;
+        public HttpStatus apply(Class<Throwable> t) {
+            if(t == null) return null;
             return resolveStatus(t.getClass());
         }
 
         private HttpStatus resolveStatus(Class clazz) {
-            if(clazz == null) return HttpStatus.INTERNAL_SERVER_ERROR;
-            HttpStatus status = cache.get(clazz);
+            if(clazz == null) return null;
+            HttpStatus status = adhocStatuses.get(clazz);
             if(status == null) {
                 status = resolveAnnotation(clazz);
                 if(status == null) status = resolveMethod(clazz);
-                if(status == null) status = resolveStatus(clazz.getSuperclass());
-                if(status == null) status = HttpStatus.INTERNAL_SERVER_ERROR;
-                cache.put(clazz, status);
+                //if(status == null) status = resolveStatus(clazz.getSuperclass());
+                //if(status == null) status = HttpStatus.INTERNAL_SERVER_ERROR;
             }
             return status;
         }
