@@ -290,7 +290,7 @@ public class JsonExceptionHandler {
         @Override
         public HttpStatus apply(Class<Throwable> t) {
             if(t == null) return null;
-            return resolveStatus(t.getClass());
+            return resolveStatus(t);
         }
 
         private HttpStatus resolveStatus(Class clazz) {
