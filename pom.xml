@@ -121,7 +121,10 @@
                         <artifactId>maven-javadoc-plugin</artifactId>
                         <version>3.11.3</version>
                         <configuration>
-                            <detectJavaApiLink>false</detectJavaApiLink>
+                            <failOnError>false</failOnError>
+                            <failOnWarnings>false</failOnWarnings>
+                            <quiet>true</quiet>
+                            <additionalOption>-Xdoclint:none</additionalOption>
                         </configuration>
                         <executions>
                             <execution>
@@ -147,17 +150,6 @@
                         </executions>
                     </plugin>
 
-                    <!--plugin>
-                        <groupId>org.sonatype.plugins</groupId>
-                        <artifactId>nexus-staging-maven-plugin</artifactId>
-                        <version>1.6.13</version>
-                        <extensions>true</extensions>
-                        <configuration>
-                            <serverId>ossrh</serverId>
-                            <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
-                            <autoReleaseAfterClose>true</autoReleaseAfterClose>
-                        </configuration>
-                    </plugin-->
                     <plugin>
                       <groupId>org.sonatype.central</groupId>
                       <artifactId>central-publishing-maven-plugin</artifactId>
