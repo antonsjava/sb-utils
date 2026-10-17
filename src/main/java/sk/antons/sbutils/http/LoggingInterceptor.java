@@ -152,7 +152,7 @@ public class LoggingInterceptor implements ClientHttpRequestInterceptor {
             sb.append("http-res[").append(reqnum)
                 .append("] ").append(request.getMethod())
                 .append(" ").append(request.getURI())
-                .append(" status:").append(response.getStatusCode().value())
+                .append(" status:").append(response.getStatusCode() == null ? 0 : response.getStatusCode().value())
                 .append(" time:").append(endtime - starttime)
                 ;
             if(responseHeaders != null) {
@@ -186,7 +186,7 @@ public class LoggingInterceptor implements ClientHttpRequestInterceptor {
         }
 
         public HttpStatusCode getStatusCode() throws IOException { return delegate.getStatusCode(); }
-        public int getRawStatusCode() throws IOException { return delegate.getRawStatusCode(); }
+        public int getRawStatusCode() throws IOException { return delegate.getStatusCode() == null ? 0 : delegate.getStatusCode().value(); }
         public String getStatusText() throws IOException { return delegate.getStatusText(); }
         public void close() { delegate.close(); }
         public HttpHeaders getHeaders() { return delegate.getHeaders(); }
@@ -207,7 +207,7 @@ public class LoggingInterceptor implements ClientHttpRequestInterceptor {
                 StringBuffer sb = new StringBuffer(300);
                 if(headers != null) {
                     boolean first = true;
-                    for(Map.Entry<String, List<String>> entry : headers.entrySet()) {
+                    for(Map.Entry<String, List<String>> entry : headers.headerSet()) {
                         String key = entry.getKey();
                         for(String string : entry.getValue()) {
                             if(first) first = false;
@@ -229,7 +229,7 @@ public class LoggingInterceptor implements ClientHttpRequestInterceptor {
                 StringBuffer sb = new StringBuffer(300);
                 if((headers != null) && (name != null)) {
                     boolean first = true;
-                    for(Map.Entry<String, List<String>> entry : headers.entrySet()) {
+                    for(Map.Entry<String, List<String>> entry : headers.headerSet()) {
                         String key = entry.getKey();
                         boolean match = false;
                         for(String string : name) {

@@ -154,7 +154,7 @@ public class RestTemplateClient {
                 }
                 requesttime = System.currentTimeMillis()- starttime;
 
-                if(log.isDebugEnabled()) log.debug("res[{}] {} {} status: {}, time: {}", id, method.name(), url(), response.getStatusCodeValue(), requesttime);
+                if(log.isDebugEnabled()) log.debug("res[{}] {} {} status: {}, time: {}", id, method.name(), url(), response.getStatusCode(), requesttime);
                 if(RestTemplateClient.this.responseValidator().test(response)) {
                     return response.getBody();
                 } else {
@@ -300,7 +300,7 @@ public class RestTemplateClient {
                 if(response == null) return false;
                 if(response.getStatusCode() == null) return false;
                 for(int code : codes) {
-                    if(response.getStatusCodeValue() == code) return true;
+                    if((response.getStatusCode() != null) && (response.getStatusCode().value() == code)) return true;
                 }
                 return false;
             };

@@ -4,7 +4,7 @@
 
     <groupId>io.github.antonsjava</groupId>
     <artifactId>sb-utils</artifactId>
-    <version>3.9</version>
+    <version>4.9</version>
     <packaging>jar</packaging>
 
     <name>sb-utils</name>
@@ -42,7 +42,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-        <spring-boot.version>3.1.4</spring-boot.version>
+        <spring-boot.version>4.1.1</spring-boot.version>
         <additionalparam>-Xdoclint:none</additionalparam>
     </properties>
 
@@ -78,7 +78,7 @@
         <dependency>
             <groupId>org.apache.cxf</groupId>
             <artifactId>cxf-rt-bindings-soap</artifactId>
-            <version>3.6.2</version>
+            <version>4.2.3</version>
 			<scope>provided</scope>
         </dependency>
         <dependency>
@@ -106,7 +106,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-source-plugin</artifactId>
-                        <version>3.2.1</version>
+                        <version>3.4.0</version>
                         <executions>
                             <execution>
                                 <id>attach-sources</id>
@@ -119,7 +119,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>3.5.0</version>
+                        <version>3.11.3</version>
                         <configuration>
                             <detectJavaApiLink>false</detectJavaApiLink>
                         </configuration>
@@ -135,7 +135,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-gpg-plugin</artifactId>
-                        <version>3.0.1</version>
+                        <version>3.2.8</version>
                         <executions>
                             <execution>
                                 <id>sign-artifacts</id>
@@ -161,7 +161,7 @@
                     <plugin>
                       <groupId>org.sonatype.central</groupId>
                       <artifactId>central-publishing-maven-plugin</artifactId>
-                      <version>0.8.0</version>
+                      <version>0.11.0</version>
                       <extensions>true</extensions>
                       <configuration>
                         <publishingServerId>central</publishingServerId>

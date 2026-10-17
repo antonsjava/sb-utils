@@ -17,12 +17,6 @@ package sk.antons.sbutils.http;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -31,11 +25,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ResponseStatus;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.ObjectNode;
 
 /**
  * Helper class for creating exception advice class.
@@ -180,14 +180,13 @@ public class JsonExceptionHandler {
                 node = (ObjectNode)om().valueToTree(t);
             } catch(Exception e) {
                 node = new ObjectNode(JsonNodeFactory.instance);
-                ArrayNode arr = om().createArrayNode();
+                ArrayNode arr = node.putArray("causedBy");
                 Throwable tt = t;
                 while(tt != null) {
                     arr.add(tt.getClass().getSimpleName() + ": " + tt.getMessage());
                     tt = tt.getCause();
                 }
                 node.put("serializationError", e.getMessage());
-                node.put("causedBy", arr);
             }
             node.put("class", t.getClass().getSimpleName());
             return node;
@@ -199,22 +198,20 @@ public class JsonExceptionHandler {
                 node = (ObjectNode)om().valueToTree(t);
             } catch(Exception e) {
                 node = new ObjectNode(JsonNodeFactory.instance);
-                ArrayNode arr = om().createArrayNode();
+                ArrayNode arr = node.putArray("causedBy");
                 Throwable tt = t;
                 while(tt != null) {
                     arr.add(tt.getClass().getSimpleName() + ": " + tt.getMessage());
                     tt = tt.getCause();
                 }
-                node.put("causedBy", arr);
                 node.put("serializationError", e.getMessage());
             }
             node.put("class", t.getClass().getSimpleName());
             if(info.allMessages.size() > 1) {
-                ArrayNode arr = om().createArrayNode();
+                ArrayNode arr = node.putArray("allMessages");
                 for(String message : info.allMessages) {
                     arr.add(message);
                 }
-                node.put("allMesages", arr);
             }
             return node;
         }
@@ -222,12 +219,13 @@ public class JsonExceptionHandler {
         private ObjectMapper om = null;
         private ObjectMapper om() {
             if(om == null) {
-                ObjectMapper o = new ObjectMapper();
-                o.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-                o.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-                o.configure(SerializationFeature.INDENT_OUTPUT, true);
-                o.registerModule(new JavaTimeModule());
-                o.addMixIn(Throwable.class, MixIn.class);
+                ObjectMapper o = JsonMapper.builder()
+                    .changeDefaultPropertyInclusion(value -> value.withContentInclusion(JsonInclude.Include.NON_NULL))
+                    .configure(SerializationFeature.INDENT_OUTPUT, true)
+                    .addMixIn(Throwable.class, MixIn.class)
+                    .build();
+                //o.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+                //o.registerModule(new JavaTimeModule());
                 om = o;
             }
             return om;
