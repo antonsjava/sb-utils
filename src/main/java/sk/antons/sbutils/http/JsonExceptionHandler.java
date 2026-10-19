@@ -80,7 +80,7 @@ public class JsonExceptionHandler {
     private static Logger log = LoggerFactory.getLogger(JsonExceptionHandler.class);
 
     private Consumer<Throwable> logger = null;
-    private Function<Class<Throwable>, HttpStatus> statusResolver = DefaultStatusResolver.instance();
+    private Function<Class<? extends Throwable>, HttpStatus> statusResolver = DefaultStatusResolver.instance();
     private Function<Throwable, ObjectNode> processor = null;
 
     public static JsonExceptionHandler instance() { return new JsonExceptionHandler(); }
@@ -96,7 +96,7 @@ public class JsonExceptionHandler {
      * @param value method
      * @return this
      */
-    public JsonExceptionHandler statusResolver(Function<Class<Throwable>, HttpStatus> value) { this.statusResolver = value; return this; }
+    public JsonExceptionHandler statusResolver(Function<Class<? extends Throwable>, HttpStatus> value) { this.statusResolver = value; return this; }
     /**
      * method for converting exception to json response
      * @param value method
@@ -147,7 +147,7 @@ public class JsonExceptionHandler {
 
 
         if(ei.status == null) {
-            HttpStatus status = resolveStatusInHierarchy((Class<Throwable>)t.getClass());
+            HttpStatus status = resolveStatusInHierarchy((Class<? extends Throwable>)t.getClass());
             if(status != null) {
                 ei.markedExc = t;
                 ei.status = status;
@@ -158,9 +158,9 @@ public class JsonExceptionHandler {
     }
 
     private Map<Class, Optional<HttpStatus>> cachedStatuses = new HashMap<>();
-    private HttpStatus resolveStatusInHierarchy(Class<Throwable> clazz) {
+    private HttpStatus resolveStatusInHierarchy(Class<? extends Throwable> clazz) {
         HttpStatus status = null;
-        Class<Throwable> cl = clazz;
+        Class<? extends Throwable> cl = clazz;
         while(cl != null) {
             Optional<HttpStatus> ostatus = cachedStatuses.get(cl);
             if(ostatus != null) return ostatus.get();
@@ -170,7 +170,7 @@ public class JsonExceptionHandler {
                 cachedStatuses.put(clazz, Optional.of(status));
                 return status;
             }
-            cl = (Class<Throwable>)cl.getSuperclass();
+            cl = (Class<? extends Throwable>)cl.getSuperclass();
         }
         cachedStatuses.put(clazz, Optional.empty());
         return null;
@@ -268,9 +268,9 @@ public class JsonExceptionHandler {
      * Allows also define status for custom exception classes.
      * if class not define status code null is returned;
      */
-    public static class DefaultStatusResolver implements Function<Class<Throwable>, HttpStatus> {
+    public static class DefaultStatusResolver implements Function<Class<? extends Throwable>, HttpStatus> {
 
-        private Map<Class<Throwable>, HttpStatus> adhocStatuses = new HashMap<>();
+        private Map<Class<? extends Throwable>, HttpStatus> adhocStatuses = new HashMap<>();
 
         public static DefaultStatusResolver instance() { return new DefaultStatusResolver(); }
 
@@ -280,7 +280,7 @@ public class JsonExceptionHandler {
          * @param status
          * @return this
          */
-        public DefaultStatusResolver status(Class<Throwable> exceptionClass, HttpStatus status) {
+        public DefaultStatusResolver status(Class<? extends Throwable> exceptionClass, HttpStatus status) {
             if(exceptionClass == null) throw new IllegalArgumentException("no exceptionClass");
             if(status == null) throw new IllegalArgumentException("no status");
             adhocStatuses.put(exceptionClass, status);
@@ -288,7 +288,7 @@ public class JsonExceptionHandler {
         }
 
         @Override
-        public HttpStatus apply(Class<Throwable> t) {
+        public HttpStatus apply(Class<? extends Throwable> t) {
             if(t == null) return null;
             return resolveStatus(t);
         }
