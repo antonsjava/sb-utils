@@ -127,8 +127,11 @@ public class LoggingInterceptor implements ClientHttpRequestInterceptor {
 
     @Override
     public ClientHttpResponse intercept(HttpRequest request, byte[] body, ClientHttpRequestExecution execution) throws IOException {
-        int reqnum = counter++;
-        if((loggerEnabled != null) && (loggerEnabled.getAsBoolean()) && (logger != null)) {
+        int reqnum = 0;
+        long starttime = 0;
+        boolean enabled = (loggerEnabled != null) && (loggerEnabled.getAsBoolean()) && (logger != null);
+        if(enabled) {
+            reqnum = counter++;
             StringBuilder sb = new StringBuilder(expectedRequestLength);
             sb.append("http-req[").append(reqnum)
                 .append("] ").append(request.getMethod())
@@ -143,11 +146,13 @@ public class LoggingInterceptor implements ClientHttpRequestInterceptor {
                     .append("]");
             }
             logger.accept(sb.toString());
+            starttime = System.currentTimeMillis();
         }
-        long starttime = System.currentTimeMillis();
+
         ClientHttpResponse response = execution.execute(request, body);
-        long endtime = System.currentTimeMillis();
-        if((loggerEnabled != null) && (loggerEnabled.getAsBoolean()) && (logger != null)) {
+
+        if(enabled) {
+            long endtime = System.currentTimeMillis();
             StringBuilder sb = new StringBuilder(expectedResponseLength);
             sb.append("http-res[").append(reqnum)
                 .append("] ").append(request.getMethod())
