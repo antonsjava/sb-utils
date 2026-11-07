@@ -66,19 +66,19 @@ public class SBWSLoggingInterceptor implements ClientInterceptor {
 
     @Override
     public boolean handleRequest(MessageContext messageContext) {
-        log(messageContext.getRequest(), "soap-out["+counterNext()+"]");
+        if ((loggerEnabled != null) && loggerEnabled.getAsBoolean()) log(messageContext.getRequest(), "soap-out["+counterNext()+"]");
         return true;
     }
 
     @Override
     public boolean handleResponse(MessageContext messageContext) {
-        log(messageContext.getResponse(), " soap-in["+counter()+"]");
+        if ((loggerEnabled != null) && loggerEnabled.getAsBoolean()) log(messageContext.getResponse(), " soap-in["+counter()+"]");
         return true;
     }
 
     @Override
     public boolean handleFault(MessageContext messageContext) {
-        log(messageContext.getResponse(), " soap-in["+counter()+"]");
+        if ((loggerEnabled != null) && loggerEnabled.getAsBoolean()) log(messageContext.getResponse(), " soap-in["+counter()+"]");
         return true;
     }
 
@@ -88,7 +88,7 @@ public class SBWSLoggingInterceptor implements ClientInterceptor {
     }
 
     private void log(WebServiceMessage message, String messageType) {
-        if (loggerEnabled.getAsBoolean()) {
+        if (logger != null) {
             try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
                 message.writeTo(stream);
                 String xml = format == null ? stream.toString(StandardCharsets.UTF_8) : format.apply(new ByteArrayInputStream(stream.toByteArray()));
